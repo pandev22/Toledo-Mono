@@ -140,7 +140,7 @@ export default function DailyRewardsPage() {
   };
 
   // Loading state
-  if (loadingStatus && !claimStatus) {
+  if (loadingStatus) {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center h-64">
@@ -148,6 +148,10 @@ export default function DailyRewardsPage() {
         </div>
       </div>
     );
+  }
+
+  if (!claimStatus) {
+    return null;
   }
 
   return (
@@ -270,8 +274,8 @@ export default function DailyRewardsPage() {
                     <div className="space-y-2">
                       <h3 className="text-xl font-medium">Claim Your Daily Reward</h3>
                       <p className="text-sm text-[#95a1ad]">
-                        {claimStatus.currentStreak > 0
-                          ? `Current streak: ${claimStatus.currentStreak} day${claimStatus.currentStreak !== 1 ? 's' : ''}`
+                        {(claimStatus?.currentStreak ?? 0) > 0
+                          ? `Current streak: ${claimStatus?.currentStreak ?? 0} day${(claimStatus?.currentStreak ?? 0) !== 1 ? 's' : ''}`
                           : 'Start your streak today!'}
                       </p>
                     </div>
@@ -279,37 +283,37 @@ export default function DailyRewardsPage() {
                     <div className="bg-[#202229] p-4 rounded-lg border border-white/10 max-w-md">
                       <div className="flex justify-between mb-2 gap-3">
                         <span className="text-[#95a1ad]">Today's reward:</span>
-                        <span className="font-medium">{claimStatus.nextReward.amount} coins</span>
+                        <span className="font-medium">{claimStatus?.nextReward?.amount ?? 0} coins</span>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs mt-3">
                         <div className="p-2 rounded bg-[#1a1c1e] flex flex-col items-center">
                           <span className="text-[#95a1ad]">Base</span>
-                          <span>{claimStatus.nextReward.baseAmount}</span>
+                          <span>{claimStatus?.nextReward?.baseAmount ?? 0}</span>
                         </div>
                         <div className="p-2 rounded bg-[#1a1c1e] flex flex-col items-center">
                           <span className="text-[#95a1ad]">Multiplier</span>
-                          <span>{claimStatus.nextReward.multiplier.toFixed(1)}x</span>
+                          <span>{claimStatus?.nextReward?.multiplier?.toFixed(1) ?? "1.0"}x</span>
                         </div>
                         <div className="p-2 rounded bg-[#1a1c1e] flex flex-col items-center">
                           <span className="text-[#95a1ad]">Milestone</span>
-                          <span>+{claimStatus.nextReward.milestoneBonus}</span>
+                          <span>+{claimStatus?.nextReward?.milestoneBonus ?? 0}</span>
                         </div>
                       </div>
                     </div>
 
-                    {claimStatus.daysSinceLastClaim > 1 && !claimStatus.streakWillMaintain && (
+                    {(claimStatus?.daysSinceLastClaim ?? 0) > 1 && !claimStatus?.streakWillMaintain && (
                       <div className="rounded-md border border-yellow-500/20 bg-yellow-500/10 text-yellow-500 p-3 max-w-md">
                         <div className="flex items-start">
                           <AlertCircle className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0" />
                           <span className="text-sm">
-                            It's been {claimStatus.daysSinceLastClaim} days since your last claim. Your streak will reset.
+                            It's been {claimStatus?.daysSinceLastClaim ?? 0} days since your last claim. Your streak will reset.
                           </span>
                         </div>
                       </div>
                     )}
 
-                    {claimStatus.willUseProtection && (
+                    {claimStatus?.willUseProtection && (
                       <div className="rounded-md border border-blue-500/20 bg-blue-500/10 text-blue-500 p-3 max-w-md">
                         <div className="flex items-start">
                           <Shield className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0" />
@@ -341,13 +345,13 @@ export default function DailyRewardsPage() {
                     <div className="space-y-2">
                       <h3 className="text-xl font-medium">Already Claimed Today</h3>
                       <p className="text-sm text-[#95a1ad]">
-                        Current streak: {claimStatus.currentStreak} day{claimStatus.currentStreak !== 1 ? 's' : ''}
+                        Current streak: {claimStatus?.currentStreak ?? 0} day{(claimStatus?.currentStreak ?? 0) !== 1 ? 's' : ''}
                       </p>
                     </div>
 
                     <div className="bg-[#202229] p-4 rounded-lg border border-white/10 max-w-md">
                       <p className="text-[#95a1ad] mb-2">Come back tomorrow to continue your streak</p>
-                      <p className="font-medium">Next reward: {claimStatus.nextReward.amount} coins</p>
+                      <p className="font-medium">Next reward: {claimStatus?.nextReward?.amount ?? 0} coins</p>
                     </div>
 
                     <div className="text-sm text-[#95a1ad]">
