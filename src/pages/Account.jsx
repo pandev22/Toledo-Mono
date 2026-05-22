@@ -1,6 +1,7 @@
-import { AlertCircle, AlertTriangle, Coins, Copy, Gift, HelpCircle, Key, Loader2, RefreshCw, ShieldCheck, Trash2, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { AlertCircle, AlertTriangle, Coins, Copy, Gift, HelpCircle, Key, Loader2, Monitor, RefreshCw, ShieldCheck, Smartphone, Trash2, User, Globe, MapPin, Clock } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import TwoFactorAuth from './TwoFactorAuth';
 
 const AccountPage = () => {
@@ -24,6 +25,11 @@ const AccountPage = () => {
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleteError, setDeleteError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Sessions state
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [disconnecting, setDisconnecting] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,6 +67,80 @@ const AccountPage = () => {
 
     return () => clearInterval(coinsInterval);
   }, []);
+
+  const fetchSessions = useCallback(async () => {
+    try {
+      setSessionsLoading(true);
+      const response = await fetch('/api/user/sessions');
+      if (response.ok) {
+        const data = await response.json();
+        setSessions(data.sessions || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch sessions:', err);
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'sessions') {
+      fetchSessions();
+    }
+  }, [activeTab, fetchSessions]);
+
+  const disconnectSession = async (sessionId) => {
+    try {
+      setDisconnecting(sessionId);
+      const response = await fetch(`/api/user/sessions/${sessionId}`, { method: 'DELETE' });
+      if (response.ok) {
+        setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      } else {
+        const err = await response.json();
+        alert(err.error || 'Failed to disconnect session');
+      }
+    } catch (err) {
+      console.error('Error disconnecting session:', err);
+    } finally {
+      setDisconnecting(null);
+    }
+  };
+
+  const formatDate = (ts) => {
+    if (!ts) return 'Unknown';
+    const d = new Date(ts);
+    const now = new Date();
+    const diffMs = now - d;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const truncateUA = (ua) => {
+    if (!ua) return 'Web Browser';
+    const lower = ua.toLowerCase();
+    let browser = 'Browser';
+    if (lower.includes('chrome/') && !lower.includes('edg/')) browser = 'Chrome';
+    else if (lower.includes('firefox/')) browser = 'Firefox';
+    else if (lower.includes('safari/') && lower.includes('version/')) browser = 'Safari';
+    else if (lower.includes('edg/')) browser = 'Edge';
+    else if (lower.includes('opr/')) browser = 'Opera';
+    if (lower.includes('mobile') || lower.includes('android') || lower.includes('iphone')) {
+      return browser + ' Mobile';
+    }
+    return browser;
+  };
+
+  const formatLocation = (loc) => {
+    if (!loc) return null;
+    const parts = [];
+    if (loc.city) parts.push(loc.city);
+    if (loc.region) parts.push(loc.region);
+    if (loc.country) parts.push(loc.country);
+    return parts.join(', ') || null;
+  };
 
   const handleClaimCode = async () => {
     if (!claimCode) {
@@ -277,6 +357,17 @@ const AccountPage = () => {
             </button>
             <button
               type="button"
+              onClick={() => setActiveTab('sessions')}
+              className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium transition whitespace-nowrap ${activeTab === 'sessions'
+                  ? 'border-white text-white'
+                  : 'border-transparent text-[#95a1ad] hover:text-white hover:border-white/20'
+                }`}
+            >
+              <Globe className="w-4 h-4" />
+              Sessions
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('referrals')}
               className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium transition whitespace-nowrap ${activeTab === 'referrals'
                   ? 'border-white text-white'
@@ -417,6 +508,112 @@ const AccountPage = () => {
                   <Trash2 className="w-4 h-4" />
                   Delete Account
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sessions Content */}
+        {activeTab === 'sessions' && (
+          <div className="space-y-6">
+            <div className="border border-[#2e3337] rounded-lg bg-transparent">
+              <div className="p-4 pb-3 border-b border-[#2e3337]">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5" />
+                  <h3 className="font-normal text-lg">
+                    {sessionsLoading ? 'Active Sessions' : `${sessions.length} active session${sessions.length !== 1 ? 's' : ''}`}
+                  </h3>
+                </div>
+                <p className="text-sm text-[#95a1ad] mt-1">
+                  Manage your active login sessions across devices
+                </p>
+              </div>
+              <div className="p-4">
+                {sessionsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="w-6 h-6 animate-spin text-[#95a1ad]" />
+                  </div>
+                ) : sessions.length > 0 ? (
+                  <div className="space-y-3">
+                    {sessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className={`flex items-start justify-between p-3 rounded-md border ${
+                          session.isCurrent
+                            ? 'bg-[#1a2332] border-[#2a4a6a]'
+                            : 'bg-[#202229] border-[#2e3337]'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <div className="mt-0.5">
+                            {session.userAgent && (
+                              (session.userAgent.toLowerCase().includes('mobile') ||
+                               session.userAgent.toLowerCase().includes('android') ||
+                               session.userAgent.toLowerCase().includes('iphone'))
+                            ) ? <Smartphone className="w-4 h-4 text-[#95a1ad]" /> : <Monitor className="w-4 h-4 text-[#95a1ad]" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-medium">{truncateUA(session.userAgent)}</p>
+                              {session.isCurrent && (
+                                <span className="text-[0.6rem] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-medium border border-blue-500/30">
+                                  Current
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-[#95a1ad]">
+                              {session.ip && (
+                                <span className="flex items-center gap-1">
+                                  <Globe className="w-3 h-3" />
+                                  {session.ip}
+                                </span>
+                              )}
+                              {session.location && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {formatLocation(session.location)}
+                                </span>
+                              )}
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatDate(session.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          {!session.isCurrent && (
+                            <ConfirmDialog
+                              title="Disconnect Session"
+                              description="This will sign out the user from this session. Are you sure?"
+                              confirmText="Disconnect"
+                              variant="destructive"
+                              onConfirm={() => disconnectSession(session.id)}
+                              trigger={
+                                <button
+                                  disabled={disconnecting === session.id}
+                                  className="p-1.5 text-red-500 rounded-md hover:bg-red-500/10 transition active:scale-95 disabled:opacity-50 disabled:hover:bg-transparent disabled:active:scale-100"
+                                  title="Disconnect session"
+                                >
+                                  {disconnecting === session.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="w-4 h-4" />
+                                  )}
+                                </button>
+                              }
+                            />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-6 flex flex-col items-center justify-center text-center">
+                    <ShieldCheck className="w-8 h-8 text-[#95a1ad] mb-2" />
+                    <p className="text-[#95a1ad]">No active sessions found</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
