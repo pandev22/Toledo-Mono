@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Plus, RefreshCw, Info, ChevronDown, ChevronUp } from 'lucide-react';
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
+import axios from 'axios';
+import { ChevronDown, ChevronUp, Info, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 const UsersPage = () => {
   const { id } = useParams();
@@ -191,7 +191,7 @@ const UsersPage = () => {
               )}
             </div>
             <Input
-              placeholder="Panel email (e.g. cmn21c53u0000c7qp@gmail.com)"
+              placeholder="Panel email (e.g. discord_cmn21c53u0000c7qp0jc3fxp9@gmail.com)"
               value={newUserEmail}
               onChange={(e) => setNewUserEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddUser()}
