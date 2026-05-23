@@ -181,7 +181,7 @@ const UsersPage = () => {
                   </li>
                   <li className="flex gap-2">
                     <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center font-medium">2</span>
-                    <span>Their panel email is based on their account ID — it looks like <code className="text-xs bg-neutral-800 px-1.5 py-0.5 rounded text-neutral-300">cmn21c53u0000c7qp@gmail.com</code>. They can also find it in their <strong className="text-white">SFTP credentials</strong>.</span>
+                    <span>Their panel email is based on their account ID — it looks like <code className="text-xs bg-neutral-800 px-1.5 py-0.5 rounded text-neutral-300">discord_cmn21c53u0000c7qp0jc3fxp9@gmail.com</code>. They can also find it in their <strong className="text-white">SFTP credentials</strong>.</span>
                   </li>
                   <li className="flex gap-2">
                     <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center font-medium">3</span>
