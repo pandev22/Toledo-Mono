@@ -1,34 +1,40 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import {
-  Settings, Save, RefreshCw, AlignLeft, Variable, PowerOff,
-  Server, AlertTriangle, CheckCircle2, Terminal, Loader2, LogOut,
-  Trash2, AlertCircle, X
-} from 'lucide-react';
-import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Tabs, TabsContent, TabsList, TabsTrigger,
-} from "@/components/ui/tabs";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { showApiErrorToast } from '@/lib/api';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tabs, TabsContent, TabsList, TabsTrigger,
+} from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { showApiErrorToast } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+import {
+  AlertTriangle,
+  Loader2,
+  PowerOff,
+  RefreshCw,
+  Save,
+  Settings,
+  Terminal,
+  Trash2,
+  Variable
+} from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -48,7 +54,7 @@ const SettingsPage = () => {
   const { data: serverData, isLoading: isLoadingServer } = useQuery({
     queryKey: ['server', id],
     queryFn: async () => {
-      const { data } = await axios.get(`/api/server/${id}`);
+      const { data } = await axios.get(`/api/v5/server/${id}`);
       setServerName(data.attributes.name);
       setEditedStartup(prev => ({
         ...prev,

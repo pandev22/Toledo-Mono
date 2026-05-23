@@ -335,7 +335,7 @@ export default function ConsolePage() {
   const { data: serverData, error: serverError, isLoading: isLoadingServer } = useQuery({
     queryKey: ['server', id],
     queryFn: async () => {
-      const { data } = await axios.get(`/api/server/${id}`);
+      const { data } = await axios.get(`/api/v5/server/${id}`);
       return data;
     }
   });

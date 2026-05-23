@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import {
-  CpuChipIcon,
   ArrowPathIcon,
   CheckIcon,
+  CpuChipIcon,
   InformationCircleIcon
 } from '@heroicons/react/24/outline';
-import { MemoryStick, HardDrive } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { HardDrive, MemoryStick } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 
 function clampResourceValue(value, min, max) {
@@ -32,7 +32,7 @@ export default function ServerPackagePage() {
     queryKey: ['server', id],
     queryFn: async () => {
       try {
-        const { data } = await axios.get(`/api/server/${id}`);
+        const { data } = await axios.get(`/api/v5/server/${id}`);
         return data?.attributes;
       } catch (error) {
         console.error('Failed to fetch server:', error);
