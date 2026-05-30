@@ -105,9 +105,7 @@ const SettingsPage = () => {
   // Update startup configuration mutation
   const updateStartup = useMutation({
     mutationFn: async (config) => {
-      const internalId = serverData?.attributes?.internal_id;
-      if (!internalId) throw new Error('Server internal ID not found');
-      await axios.put(`/api/server/${internalId}/startup`, config);
+      await axios.put(`/api/server/${id}/startup`, config);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['server', id]);

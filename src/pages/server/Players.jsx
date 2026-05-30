@@ -129,9 +129,15 @@ export default function PlayersPage() {
 
   // WebSocket connection for sending commands
   useEffect(() => {
+    const RETRY_LIMIT = 5;
+    let retryCount = 0;
+    let reconnectTimeout = null;
+
     const connectWebSocket = async () => {
       try {
         const { data } = await axios.get(`/api/server/${id}/websocket`);
+        if (!mounted.current) return;
+
         const ws = new WebSocket(data.data.socket);
 
         ws.onopen = () => {
@@ -139,21 +145,43 @@ export default function PlayersPage() {
             ws.close();
             return;
           }
+          retryCount = 0;
+          socketRef.current = ws;
           ws.send(JSON.stringify({
             event: "auth",
             args: [data.data.token]
           }));
         };
 
-        socketRef.current = ws;
+        ws.onerror = () => {
+          // WS error — will trigger onclose
+        };
+
+        ws.onclose = () => {
+          if (socketRef.current === ws) {
+            socketRef.current = null;
+          }
+          if (!mounted.current) return;
+          if (retryCount < RETRY_LIMIT) {
+            retryCount++;
+            const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 15000);
+            reconnectTimeout = setTimeout(connectWebSocket, delay);
+          }
+        };
       } catch (error) {
-        // Silently ignore WebSocket connection errors
+        if (!mounted.current) return;
+        if (retryCount < RETRY_LIMIT) {
+          retryCount++;
+          const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 15000);
+          reconnectTimeout = setTimeout(connectWebSocket, delay);
+        }
       }
     };
 
     connectWebSocket();
 
     return () => {
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (socketRef.current) {
         socketRef.current.close();
         socketRef.current = null;

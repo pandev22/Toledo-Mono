@@ -674,7 +674,7 @@ export default function ConsolePage() {
           handleWebSocketMessage(event);
         };
 
-        ws.onclose = () => {
+        ws.onclose = (event) => {
           if (socketRef.current !== ws) {
             return;
           }
@@ -683,6 +683,20 @@ export default function ConsolePage() {
           connectionInFlightRef.current = false;
 
           if (!mounted.current || intentionalCloseRef.current) {
+            return;
+          }
+
+          // Close code 4004 = token expired, refresh and reconnect immediately
+          if (event.code === 4004) {
+            retryCountRef.current = 0;
+            refreshToken();
+            setIsConnecting(true);
+            reconnectTimeoutRef.current = setTimeout(() => {
+              reconnectTimeoutRef.current = null;
+              if (mounted.current && !intentionalCloseRef.current) {
+                connectWebSocket();
+              }
+            }, 1000);
             return;
           }
 

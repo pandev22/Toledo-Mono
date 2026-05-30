@@ -641,6 +641,8 @@ export default function ServersPage() {
   const [serverStatus, setServerStatus] = useState({});
   const [serverStats, setServerStats] = useState({});
   const socketsRef = useRef({});
+  const mountedRef = useRef(true);
+  const reconnectTimeoutRef = useRef({});
 
   const { data: servers, isLoading: loadingServers } = useQuery({
     queryKey: ['servers'],
@@ -660,6 +662,7 @@ export default function ServersPage() {
 
   useEffect(() => {
     if (!servers && !subuserServers) return;
+    mountedRef.current = true;
 
     // Connect WebSockets for owned servers
     if (Array.isArray(servers)) {
@@ -680,6 +683,9 @@ export default function ServersPage() {
     }
 
     return () => {
+      mountedRef.current = false;
+      Object.values(reconnectTimeoutRef.current).forEach(t => clearTimeout(t));
+      reconnectTimeoutRef.current = {};
       Object.values(socketsRef.current).forEach(ws => ws.close());
       socketsRef.current = {};
     };
@@ -710,8 +716,16 @@ export default function ServersPage() {
 
       ws.onclose = () => {
         delete socketsRef.current[serverId];
-        // Reconnect after 5 seconds if page is still open
-        // Note: Simple reconnect, ideally check if component mounted
+        // Reconnect after 5 seconds with fresh credentials
+        if (mountedRef.current) {
+          const tid = setTimeout(() => {
+            if (mountedRef.current) {
+              connectWebSocket(server);
+            }
+            delete reconnectTimeoutRef.current[serverId];
+          }, 5000);
+          reconnectTimeoutRef.current[serverId] = tid;
+        }
       };
 
       socketsRef.current[serverId] = ws;
