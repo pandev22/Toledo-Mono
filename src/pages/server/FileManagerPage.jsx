@@ -1239,31 +1239,31 @@ const FileManagerPage = () => {
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
-              className="fixed bottom-0 sm:bottom-6 left-0 sm:left-1/2 right-0 sm:right-auto z-40 sm:transform sm:-translate-x-1/2 px-0 sm:px-0 pb-[env(safe-area-inset-bottom,0px)] sm:pb-0"
+              className="fixed bottom-4 sm:bottom-6 left-4 sm:left-1/2 right-4 sm:right-auto z-40 sm:transform sm:-translate-x-1/2 pb-[env(safe-area-inset-bottom,8px)] sm:pb-0"
             >
-              <Card className="shadow-xl border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-none sm:rounded-lg">
-                <CardContent className="flex items-center justify-between sm:justify-start gap-1 sm:gap-3 p-3 overflow-x-auto">
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <CheckCircle2 className="h-4 w-4 text-primary" />
+              <Card className="shadow-xl border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-lg">
+                <CardContent className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 p-2 sm:p-3">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                     </div>
-                    <span className="text-sm font-medium whitespace-nowrap">
+                    <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
                       {selectedFiles.length} selected
                     </span>
                   </div>
                   
-                  <Separator orientation="vertical" className="h-6 shrink-0" />
+                  <Separator orientation="vertical" className="h-5 sm:h-6 shrink-0" />
                   
-                  <div className="flex items-center gap-1 sm:gap-1 shrink-0">
+                  <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleArchive(selectedFiles)}
-                          className="h-10 sm:h-8 px-3 sm:px-3"
+                          className="h-8 sm:h-8 px-2 sm:px-3"
                         >
-                          <Archive className="h-4 w-4 sm:mr-1.5" />
+                          <Archive className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-1.5" />
                           <span className="hidden sm:inline">Archive</span>
                         </Button>
                       </TooltipTrigger>
@@ -1280,9 +1280,9 @@ const FileManagerPage = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-10 sm:h-8 px-3 sm:px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="h-8 sm:h-8 px-2 sm:px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
-                          <Trash2 className="h-4 w-4 sm:mr-1.5" />
+                          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-1.5" />
                           <span className="hidden sm:inline">Delete</span>
                         </Button>
                       }
@@ -1294,9 +1294,9 @@ const FileManagerPage = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => setSelectedFiles([])}
-                          className="h-10 w-10 sm:h-8 sm:w-8"
+                          className="h-8 w-8 sm:h-8 sm:w-8"
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Clear selection</TooltipContent>
