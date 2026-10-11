@@ -1,11 +1,13 @@
-import { AlertCircle, AlertTriangle, Coins, Copy, Gift, HelpCircle, Key, Loader2, Monitor, RefreshCw, ShieldCheck, Smartphone, Trash2, User, Globe, MapPin, Clock } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Coins, Copy, Gift, HelpCircle, Key, Loader2, Monitor, RefreshCw, ShieldCheck, Smartphone, Trash2, User, Globe, MapPin, Clock, LogOut } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import TwoFactorAuth from './TwoFactorAuth';
+import { useToast } from '@/hooks/use-toast';
 
 const AccountPage = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("account");
   const [claimCode, setClaimCode] = useState('');
   const [newCode, setNewCode] = useState('');
@@ -30,6 +32,7 @@ const AccountPage = () => {
   const [sessions, setSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(null);
+  const [revokingOthers, setRevokingOthers] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,18 +92,81 @@ const AccountPage = () => {
     }
   }, [activeTab, fetchSessions]);
 
+  const revokeOtherSessions = async () => {
+    try {
+      setRevokingOthers(true);
+      const response = await fetch('/api/user/sessions/revoke-others', { method: 'POST' });
+      if (response.ok) {
+        setSessions((prev) => prev.filter((s) => s.isCurrent));
+        toast({
+          title: 'Sessions Revoked',
+          description: 'All other active sessions have been disconnected.'
+        });
+      } else {
+        let errorMsg = 'Failed to revoke other sessions';
+        try {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await response.json();
+            errorMsg = data.error || errorMsg;
+          } else {
+            const text = await response.text();
+            if (text && text.length < 200) errorMsg = text;
+          }
+        } catch {}
+        toast({
+          title: 'Revocation Failed',
+          description: errorMsg,
+          variant: 'destructive'
+        });
+      }
+    } catch (err) {
+      console.error('Error revoking other sessions:', err);
+      toast({
+        title: 'Network Error',
+        description: 'Failed to revoke other sessions. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setRevokingOthers(false);
+    }
+  };
+
   const disconnectSession = async (sessionId) => {
     try {
       setDisconnecting(sessionId);
-      const response = await fetch(`/api/user/sessions/${sessionId}`, { method: 'DELETE' });
+      const response = await fetch(`/api/user/sessions/${encodeURIComponent(sessionId)}`, { method: 'DELETE' });
       if (response.ok) {
         setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+        toast({
+          title: 'Session Disconnected',
+          description: 'The session has been disconnected.'
+        });
       } else {
-        const err = await response.json();
-        alert(err.error || 'Failed to disconnect session');
+        let errorMsg = 'Failed to disconnect session';
+        try {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await response.json();
+            errorMsg = data.error || errorMsg;
+          } else {
+            const text = await response.text();
+            if (text && text.length < 200) errorMsg = text;
+          }
+        } catch {}
+        toast({
+          title: 'Disconnect Failed',
+          description: errorMsg,
+          variant: 'destructive'
+        });
       }
     } catch (err) {
       console.error('Error disconnecting session:', err);
+      toast({
+        title: 'Network Error',
+        description: 'Failed to disconnect session. Please try again.',
+        variant: 'destructive'
+      });
     } finally {
       setDisconnecting(null);
     }
@@ -122,11 +188,23 @@ const AccountPage = () => {
     if (!ua) return 'Web Browser';
     const lower = ua.toLowerCase();
     let browser = 'Browser';
-    if (lower.includes('chrome/') && !lower.includes('edg/')) browser = 'Chrome';
+    if (lower.includes('crios/')) browser = 'Chrome';
+    else if (lower.includes('fxios/')) browser = 'Firefox';
     else if (lower.includes('firefox/')) browser = 'Firefox';
-    else if (lower.includes('safari/') && lower.includes('version/')) browser = 'Safari';
     else if (lower.includes('edg/')) browser = 'Edge';
-    else if (lower.includes('opr/')) browser = 'Opera';
+    else if (lower.includes('opr/') || lower.includes('opera/')) browser = 'Opera';
+    else if (lower.includes('chrome/')) browser = 'Chrome';
+    else if (lower.includes('safari/')) browser = 'Safari';
+
+    let os = '';
+    if (lower.includes('iphone') || lower.includes('ipad') || lower.includes('ios')) os = 'iOS';
+    else if (lower.includes('android')) os = 'Android';
+    else if (lower.includes('windows nt 10.0')) os = 'Windows 10/11';
+    else if (lower.includes('windows')) os = 'Windows';
+    else if (lower.includes('mac os x') || lower.includes('macos')) os = 'macOS';
+    else if (lower.includes('linux')) os = 'Linux';
+
+    if (os) return browser + ' on ' + os;
     if (lower.includes('mobile') || lower.includes('android') || lower.includes('iphone')) {
       return browser + ' Mobile';
     }
@@ -517,16 +595,40 @@ const AccountPage = () => {
         {activeTab === 'sessions' && (
           <div className="space-y-6">
             <div className="border border-[#2e3337] rounded-lg bg-transparent">
-              <div className="p-4 pb-3 border-b border-[#2e3337]">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5" />
-                  <h3 className="font-normal text-lg">
-                    {sessionsLoading ? 'Active Sessions' : `${sessions.length} active session${sessions.length !== 1 ? 's' : ''}`}
-                  </h3>
+              <div className="p-4 pb-3 border-b border-[#2e3337] flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                    <h3 className="font-normal text-lg">
+                      {sessionsLoading ? 'Active Sessions' : `${sessions.length} active session${sessions.length !== 1 ? 's' : ''}`}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-[#95a1ad] mt-1">
+                    Manage your active login sessions across devices
+                  </p>
                 </div>
-                <p className="text-sm text-[#95a1ad] mt-1">
-                  Manage your active login sessions across devices
-                </p>
+                {sessions.some((s) => !s.isCurrent) && (
+                  <ConfirmDialog
+                    title="Revoke All Other Sessions"
+                    description="This will sign out all active sessions on other devices. You will stay signed in on this device."
+                    confirmText="Revoke Other Sessions"
+                    variant="destructive"
+                    onConfirm={revokeOtherSessions}
+                    trigger={
+                      <button
+                        disabled={revokingOthers}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-md transition active:scale-95 disabled:opacity-50"
+                      >
+                        {revokingOthers ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <LogOut className="w-3.5 h-3.5" />
+                        )}
+                        Revoke other sessions
+                      </button>
+                    }
+                  />
+                )}
               </div>
               <div className="p-4">
                 {sessionsLoading ? (
@@ -568,15 +670,15 @@ const AccountPage = () => {
                                   {session.ip}
                                 </span>
                               )}
-                              {session.location && (
-                                <span className="flex items-center gap-1">
+                              {formatLocation(session.location) && (
+                                <span className="flex items-center gap-1" title="Location">
                                   <MapPin className="w-3 h-3" />
                                   {formatLocation(session.location)}
                                 </span>
                               )}
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {formatDate(session.createdAt)}
+                              <span className="flex items-center gap-1" title="Last Active">
+                                <Clock className="w-3 h-3 text-[#95a1ad]" />
+                                Last active: {formatDate(session.lastActivity || session.createdAt)}
                               </span>
                             </div>
                           </div>
