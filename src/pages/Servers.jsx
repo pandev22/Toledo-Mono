@@ -8,7 +8,7 @@ import {
   ArrowPathIcon, ExclamationCircleIcon,
   UsersIcon, MagnifyingGlassIcon,
   ChevronLeftIcon, ChevronRightIcon,
-  CheckIcon
+  CheckIcon, LockClosedIcon, SparklesIcon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +81,21 @@ function CreateServerModal({ isOpen, onClose }) {
     enabled: isOpen
   });
 
+  const { data: bundleStatus } = useQuery({
+    queryKey: ['bundle-status'],
+    queryFn: async () => {
+      try {
+        const { data } = await axios.get('/api/bundles/status');
+        return data;
+      } catch {
+        return null;
+      }
+    },
+    enabled: isOpen
+  });
+
+  const hasGodPack = Boolean(bundleStatus?.hasGodPack);
+
   const selectedEgg = Array.isArray(eggsData) ? eggsData.find(e => e.id === egg) : null;
   const selectedLocation = Array.isArray(locations) ? locations.find(l => l.id === location) : null;
   const filteredNodes = Array.isArray(nodes)
@@ -116,6 +131,10 @@ function CreateServerModal({ isOpen, onClose }) {
     if (step === 2) {
       if (!location) return setError({ message: 'Location is required' });
       if (!selectedNode) return setError({ message: 'Node selection is required' });
+      const targetNode = Array.isArray(nodes) ? nodes.find(n => n.id?.toString() === selectedNode?.toString()) : null;
+      if (targetNode?.goldOnly && !hasGodPack) {
+        return setError({ message: 'This node is reserved for God Pack subscribers only. Please choose another node or acquire the God Pack.' });
+      }
     }
     if (step === 3) {
       if (!ram || !disk || !cpu) return setError({ message: 'Resource values are required' });
@@ -320,13 +339,37 @@ function CreateServerModal({ isOpen, onClose }) {
                           loadText = 'Medium load'; 
                         }
 
+                        const isGold = Boolean(node.goldOnly);
+                        const isLockedForUser = isGold && !hasGodPack;
+
                         return (
                           <div 
                             key={node.id} 
-                            onClick={() => setSelectedNode(node.id)}
-                            className={`bg-[#242424] border rounded-lg p-3 min-w-[80px] flex flex-col items-center justify-center relative cursor-pointer transition-all group ${selectedNode === node.id ? 'border-[#00A3FF] ring-1 ring-[#00A3FF]' : 'border-[#333] hover:border-neutral-500'}`}
+                            onClick={() => {
+                              if (isLockedForUser) {
+                                setError({ message: `Node "${node.name}" is reserved exclusively for God Pack subscribers (20x performance & dedicated network).` });
+                                return;
+                              }
+                              setError(null);
+                              setSelectedNode(node.id);
+                            }}
+                            className={`bg-[#242424] border rounded-lg p-3 min-w-[80px] flex flex-col items-center justify-center relative transition-all group ${
+                              isLockedForUser ? 'cursor-not-allowed opacity-85' : 'cursor-pointer'
+                            } ${
+                              selectedNode === node.id 
+                                ? (isGold ? 'border-amber-400 ring-1 ring-amber-400 bg-amber-500/10' : 'border-[#00A3FF] ring-1 ring-[#00A3FF]') 
+                                : isGold 
+                                  ? 'border-amber-500/40 hover:border-amber-400 bg-amber-500/[0.04]' 
+                                  : 'border-[#333] hover:border-neutral-500'
+                            }`}
                           >
-                            <p className="text-xs text-neutral-400 pointer-events-none">{node.name.split(' ')[0]}</p>
+                            {isGold && (
+                              <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500 text-black text-[9px] font-bold shadow-md uppercase tracking-wider whitespace-nowrap z-10">
+                                {isLockedForUser ? <LockClosedIcon className="w-2.5 h-2.5 text-black" /> : <SparklesIcon className="w-2.5 h-2.5 text-black" />}
+                                Gold
+                              </div>
+                            )}
+                            <p className="text-xs text-neutral-400 pointer-events-none mt-1">{node.name.split(' ')[0]}</p>
                             <p className="text-sm font-bold text-white pointer-events-none">{node.name.split(' ')[1] || node.id}</p>
                             
                             {/* The status dot (using provided code) */}
@@ -356,6 +399,19 @@ function CreateServerModal({ isOpen, onClose }) {
                               <p className="font-bold text-black">
                                 {node.allocated_resources?.disk ? formatBytes(node.allocated_resources.disk * 1024 * 1024) : '0 B'} / {node.disk ? formatBytes(node.disk * 1024 * 1024) : 'Unknown'}
                               </p>
+
+                              {isGold && (
+                                <>
+                                  <div className="border-t border-neutral-300 my-2"></div>
+                                  <div className="flex items-center gap-1.5 text-amber-800 font-bold text-[11px]">
+                                    <SparklesIcon className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                    <span>Gold Only (God Pack)</span>
+                                  </div>
+                                  <p className="text-[10px] text-neutral-600 mt-0.5">
+                                    20x higher performance & dedicated network. {isLockedForUser ? 'Requires active God Pack.' : 'Unlocked with your God Pack!'}
+                                  </p>
+                                </>
+                              )}
 
                               <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#f4f4f5] rotate-45"></div>
                               

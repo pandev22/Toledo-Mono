@@ -32,6 +32,7 @@ import {
   RefreshCw,
   Search,
   Server,
+  Sparkles,
   X
 } from 'lucide-react';
 
@@ -127,6 +128,27 @@ export default function AdminNodes() {
     },
     onError: (error) => {
       showApiErrorToast(toast, error, 'Failed to toggle node', 'Toggle Failed');
+    }
+  });
+
+  // Toggle node gold only mutation
+  const toggleNodeGoldMutation = useMutation({
+    mutationFn: async (nodeId) => {
+      const { data } = await axios.patch(`/api/admin/nodes/${nodeId}/toggle-gold`);
+      return { nodeId, goldOnly: data.goldOnly };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['admin-locations-nodes']);
+      setSelectedNode((prev) => (prev && prev.id === data.nodeId ? { ...prev, goldOnly: data.goldOnly } : prev));
+      toast({
+        title: data.goldOnly ? 'Gold Only Enabled' : 'Gold Only Disabled',
+        description: data.goldOnly
+          ? 'This node is now reserved exclusively for God Pack subscribers.'
+          : 'This node is now available to all eligible users.',
+      });
+    },
+    onError: (error) => {
+      showApiErrorToast(toast, error, 'Failed to update Gold only setting', 'Update Failed');
     }
   });
 
@@ -503,6 +525,12 @@ export default function AdminNodes() {
                                     <span className={node.enabled ? 'text-white' : 'text-neutral-500'}>
                                       {node.name}
                                     </span>
+                                    {node.goldOnly && (
+                                      <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-400 text-xs flex items-center gap-1 font-medium">
+                                        <Sparkles className="w-3 h-3 text-amber-400" />
+                                        Gold only
+                                      </Badge>
+                                    )}
                                     {!node.enabled && (
                                       <Badge variant="outline" className="border-red-500/50 text-red-400 text-xs">
                                         Disabled
@@ -688,6 +716,12 @@ export default function AdminNodes() {
                 <div className="flex items-center gap-2 min-w-0">
                   <Server className="w-5 h-5 text-neutral-400 shrink-0" />
                   <h2 className="text-lg font-semibold text-white truncate">{selectedNode.name}</h2>
+                  {selectedNode.goldOnly && (
+                    <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-400 text-xs shrink-0 flex items-center gap-1 font-medium">
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                      Gold only
+                    </Badge>
+                  )}
                 </div>
                 <Badge
                   variant="outline"
@@ -699,6 +733,48 @@ export default function AdminNodes() {
 
               {/* Top section: Overview + Availability */}
               <div className="grid gap-4">
+                {/* Access Policy Card with Gold only switch */}
+                <Card className="bg-[#111111] border-neutral-800">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-400" />
+                        <CardTitle className="text-sm font-semibold text-white">Access Policy</CardTitle>
+                      </div>
+                      {selectedNode.goldOnly && (
+                        <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-400 text-xs font-medium">
+                          Gold Only Active
+                        </Badge>
+                      )}
+                    </div>
+                    <CardDescription className="text-xs">
+                      Configure server deployment access permissions for this node.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-xl border border-neutral-800 bg-[#0d0d0d] p-3.5 flex items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-sm font-medium text-white cursor-pointer">Gold only</Label>
+                          {selectedNode.goldOnly && (
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                              God Pack Only
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-neutral-400">
+                          When enabled, only users with an active God Pack can create a server on this node. Non-subscribers cannot deploy servers here.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={Boolean(selectedNode.goldOnly)}
+                        onCheckedChange={() => toggleNodeGoldMutation.mutate(selectedNode.id)}
+                        disabled={toggleNodeGoldMutation.isLoading}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <Card className="bg-[#111111] border-neutral-800">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold">Overview</CardTitle>

@@ -18,7 +18,7 @@ import {
   Package,
   Shield,
   Star,
-  DollarSign,
+  CreditCard,
   Infinity
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -507,7 +507,7 @@ export default function StorePage() {
               </div>
               <div className="p-4 pb-3 space-y-4 flex-1">
                 <div className="text-2xl font-semibold">
-                  ${bundleStatus?.prices?.auto_renew?.toFixed(2) || '4.99'}
+                  {bundleStatus?.prices?.auto_renew ? `${bundleStatus.prices.auto_renew.toFixed(2)} €` : '2.99 €'}
                   <span className="text-sm text-[#95a1ad] font-normal"> / 30 days</span>
                 </div>
                 <p className="text-sm text-[#95a1ad]">
@@ -546,7 +546,7 @@ export default function StorePage() {
                     {loading.auto_renew ? (
                       <RefreshCw className="w-4 h-4 animate-spin mr-2" />
                     ) : (
-                      <DollarSign className="w-4 h-4 mr-2" />
+                      <CreditCard className="w-4 h-4 mr-2" />
                     )}
                     Subscribe Now
                   </button>
@@ -566,7 +566,7 @@ export default function StorePage() {
               </div>
               <div className="p-4 pb-3 space-y-4 flex-1">
                 <div className="text-2xl font-semibold">
-                  ${bundleStatus?.prices?.upgraded_pack?.toFixed(2) || '9.99'}
+                  {bundleStatus?.prices?.upgraded_pack ? `${bundleStatus.prices.upgraded_pack.toFixed(2)} €` : '3.99 €'}
                   <span className="text-sm text-[#95a1ad] font-normal"> / 30 days</span>
                 </div>
                 <p className="text-sm text-[#95a1ad]">
@@ -605,7 +605,7 @@ export default function StorePage() {
                     {loading.upgraded_pack ? (
                       <RefreshCw className="w-4 h-4 animate-spin mr-2" />
                     ) : (
-                      <DollarSign className="w-4 h-4 mr-2" />
+                      <CreditCard className="w-4 h-4 mr-2" />
                     )}
                     Subscribe Now
                   </button>
@@ -625,11 +625,11 @@ export default function StorePage() {
               </div>
               <div className="p-4 pb-3 space-y-4 flex-1">
                 <div className="text-2xl font-semibold">
-                  ${bundleStatus?.prices?.god_pack?.toFixed(2) || '19.99'}
+                  {bundleStatus?.prices?.god_pack ? `${bundleStatus.prices.god_pack.toFixed(2)} €` : '5.49 €'}
                   <span className="text-sm text-[#95a1ad] font-normal"> / 30 days</span>
                 </div>
                 <p className="text-sm text-[#95a1ad]">
-                  The ultimate package. Everything from Auto Renew and Upgraded Pack, plus exclusive perks.
+                  The ultimate package. Everything from Auto Renew and Upgraded Pack, plus dedicated 20x performance nodes and full app customization.
                 </p>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-start gap-2">
@@ -639,6 +639,18 @@ export default function StorePage() {
                   <li className="flex items-start gap-2">
                     <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
                     <span className="text-[#95a1ad]">Everything in Upgraded Pack</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-[#95a1ad]">
+                      <strong className="text-white font-medium">Exclusive dedicated nodes:</strong> 20x higher performance & dedicated network
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-[#95a1ad]">
+                      <strong className="text-white font-medium">Overnode App Customization:</strong> full custom themes, background & colors
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
@@ -668,7 +680,7 @@ export default function StorePage() {
                     {loading.god_pack ? (
                       <RefreshCw className="w-4 h-4 animate-spin mr-2" />
                     ) : (
-                      <DollarSign className="w-4 h-4 mr-2" />
+                      <CreditCard className="w-4 h-4 mr-2" />
                     )}
                     Subscribe Now
                   </button>
