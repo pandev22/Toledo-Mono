@@ -47,6 +47,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Server,
   Sparkles,
   X
 } from 'lucide-react';
@@ -77,6 +78,38 @@ export default function AdminEggs() {
       cpu: maximum.cpu ?? null,
     };
   };
+
+  // Fetch locations and nodes for node restriction dropdown
+  const { data: locationsNodesData } = useQuery({
+    queryKey: ['admin-locations-nodes'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/admin/locations-nodes');
+      return data;
+    }
+  });
+
+  const nodesList = React.useMemo(() => {
+    if (!locationsNodesData?.locations) return [];
+    const list = [];
+    for (const loc of locationsNodesData.locations) {
+      if (Array.isArray(loc.nodes)) {
+        for (const node of loc.nodes) {
+          list.push({
+            ...node,
+            locationName: loc.name || null
+          });
+        }
+      }
+    }
+    return list;
+  }, [locationsNodesData]);
+  const nodesMap = React.useMemo(() => {
+    const map = new Map();
+    for (const node of nodesList) {
+      map.set(String(node.id), node);
+    }
+    return map;
+  }, [nodesList]);
 
   // Fetch eggs and categories
   const { data: eggsData, isLoading, error } = useQuery({
@@ -472,6 +505,12 @@ export default function AdminEggs() {
                                   God Pack Only
                                 </Badge>
                               )}
+                              {egg.nodeId && (
+                                <Badge variant="outline" className="border-blue-500/40 text-blue-400 text-[10px] flex items-center gap-1">
+                                  <Server className="w-2.5 h-2.5" />
+                                  {nodesMap.get(String(egg.nodeId))?.name || `Node #${egg.nodeId}`}
+                                </Badge>
+                              )}
                             </div>
                             {egg.displayName && egg.displayName !== egg.originalName && (
                               <p className="text-xs text-neutral-500">
@@ -632,6 +671,51 @@ export default function AdminEggs() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Node Restriction</Label>
+                      {selectedEgg.nodeId && (
+                        <Badge variant="outline" className="border-blue-500/40 text-blue-400 text-[10px]">
+                          Restricted
+                        </Badge>
+                      )}
+                    </div>
+                    <Select
+                      value={selectedEgg.nodeId ? String(selectedEgg.nodeId) : "none"}
+                      onValueChange={(value) => setSelectedEgg({
+                        ...selectedEgg,
+                        nodeId: value === "none" ? null : value
+                      })}
+                    >
+                      <SelectTrigger className="border-neutral-700 bg-[#111111] text-white [&>span]:text-white">
+                        <SelectValue placeholder="All Nodes (No restriction)" />
+                      </SelectTrigger>
+                      <SelectContent className="border-neutral-800 bg-[#111111] text-white max-h-60">
+                        <SelectItem value="none" className="text-white focus:bg-neutral-800 focus:text-white">
+                          All Nodes (No restriction)
+                        </SelectItem>
+                        {nodesList.map(node => (
+                          <SelectItem key={node.id} value={String(node.id)} className="text-white focus:bg-neutral-800 focus:text-white">
+                            <div className="flex items-center justify-between w-full gap-2">
+                              <span>
+                                {node.name}
+                                {node.locationName && (
+                                  <span className="text-neutral-400 text-xs ml-1.5 font-normal">({node.locationName})</span>
+                                )}
+                              </span>
+                              {node.goldOnly && (
+                                <span className="text-[10px] text-amber-400 font-mono">(Gold Only)</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-neutral-500">
+                      Optional: Restrict server creation with this software to a specific node only
+                    </p>
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -841,6 +925,7 @@ export default function AdminEggs() {
                 const { id, ...updates } = selectedEgg;
                 const payload = {
                   ...updates,
+                  nodeId: updates.nodeId ? String(updates.nodeId) : null,
                   maximum: normalizeMaximumResources(updates.maximum),
                 };
 
