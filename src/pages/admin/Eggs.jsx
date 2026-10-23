@@ -47,6 +47,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Sparkles,
   X
 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -137,6 +138,27 @@ export default function AdminEggs() {
     },
     onError: (error) => {
       showApiErrorToast(toast, error, 'Failed to update egg', 'Update Failed');
+    }
+  });
+
+  // Toggle egg gold only mutation
+  const toggleGoldMutation = useMutation({
+    mutationFn: async (eggId) => {
+      const { data } = await axios.patch(`/api/admin/eggs/${eggId}/toggle-gold`);
+      return { eggId, goldOnly: data.goldOnly };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['admin-eggs']);
+      setSelectedEgg((prev) => (prev && prev.id === data.eggId ? { ...prev, goldOnly: data.goldOnly } : prev));
+      toast({
+        title: data.goldOnly ? 'God Pack Only Enabled' : 'God Pack Only Disabled',
+        description: data.goldOnly
+          ? 'This egg is now reserved exclusively for God Pack subscribers.'
+          : 'This egg is now available to all eligible users.',
+      });
+    },
+    onError: (error) => {
+      showApiErrorToast(toast, error, 'Failed to update God Pack only setting', 'Update Failed');
     }
   });
 
@@ -441,9 +463,16 @@ export default function AdminEggs() {
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium text-white">
-                              {egg.displayName || egg.originalName}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-white">
+                                {egg.displayName || egg.originalName}
+                              </p>
+                              {egg.goldOnly && (
+                                <Badge variant="outline" className="border-amber-500/40 text-amber-400 text-[10px]">
+                                  God Pack Only
+                                </Badge>
+                              )}
+                            </div>
                             {egg.displayName && egg.displayName !== egg.originalName && (
                               <p className="text-xs text-neutral-500">
                                 Original: {egg.originalName}
@@ -511,6 +540,10 @@ export default function AdminEggs() {
                               }}>
                                 <Edit className="w-4 h-4 mr-2" />
                                 Edit Configuration
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toggleGoldMutation.mutate(id)}>
+                                <Sparkles className="w-4 h-4 mr-2 text-amber-400" />
+                                {egg.goldOnly ? 'Disable God Pack Only' : 'Enable God Pack Only'}
                               </DropdownMenuItem>
                               {egg.enabled ? (
                                 <ConfirmDialog
@@ -613,6 +646,29 @@ export default function AdminEggs() {
                       onCheckedChange={(checked) => setSelectedEgg({
                         ...selectedEgg,
                         enabled: checked
+                      })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <Label>God Pack Only</Label>
+                        {selectedEgg.goldOnly && (
+                          <Badge variant="outline" className="border-amber-500/40 text-amber-400 text-[10px]">
+                            God Pack Only
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-neutral-500">
+                        Reserve this egg exclusively for God Pack subscribers
+                      </p>
+                    </div>
+                    <Switch
+                      checked={Boolean(selectedEgg.goldOnly)}
+                      onCheckedChange={(checked) => setSelectedEgg({
+                        ...selectedEgg,
+                        goldOnly: checked
                       })}
                     />
                   </div>
